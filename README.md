@@ -15,7 +15,7 @@ Create a DIY application. If you may add a PostgreSQL cartridge.
 
     rhc app create sonar diy-0.1 postgresql-9.2
 
-Add this upstream RhodeCode quickstart repo
+Add this upstream SonarQube quickstart repo
 
     git rm -r diy .openshift misc README.md
     git remote add upstream -m master https://github.com/worldline/openshift-sonarqube.git
