@@ -1,5 +1,6 @@
 #!/bin/bash
 ROOT=$OPENSHIFT_DATA_DIR
+SONAR_VERSION=4.1.1
 
 if [[ $OPENSHIFT_POSTGRESQL_DB_URL ]]
 then
@@ -7,10 +8,11 @@ then
 fi
 
 cd $ROOT
-wget http://dist.sonar.codehaus.org/sonarqube-4.1.1.zip
-unzip sonarqube-4.1.1.zip
-rm -Rf sonarqube sonarqube-4.1.1.zip
-mv sonarqube-4.1.1 sonarqube
+
+wget http://dist.sonar.codehaus.org/sonarqube-$SONAR_VERSION.zip
+unzip sonarqube-$SONAR_VERSION.zip
+rm -Rf sonarqube sonarqube-$SONAR_VERSION.zip
+mv sonarqube-$SONAR_VERSION sonarqube
 
 cd sonarqube/conf
 sed -i 's///' sonar.properties
