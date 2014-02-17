@@ -1,0 +1,27 @@
+#!/bin/bash
+ROOT=$OPENSHIFT_DATA_DIR
+
+if [[ $OPENSHIFT_POSTGRESQL_DB_URL ]]
+then
+  PG_URL="$OPENSHIFT_POSTGRESQL_DB_HOST:$OPENSHIFT_POSTGRESQL_DB_PORT/$PGDATABASE"
+fi
+
+cd $ROOT
+wget http://dist.sonar.codehaus.org/sonarqube-4.1.1.zip
+unzip sonarqube-4.1.1.zip
+rm -Rf sonarqube sonarqube-4.1.1.zip
+mv sonarqube-4.1.1 sonarqube
+
+cd sonarqube/conf
+sed -i 's///' sonar.properties
+sed -i "s/^#sonar.web.host.*$/sonar.web.host=$OPENSHIFT_DIY_IP/" sonar.properties
+sed -i "s/^#sonar.web.port.*$/sonar.web.port=$OPENSHIFT_DIY_PORT/" sonar.properties
+
+if [[ $PG_URL ]]
+then
+  sed -i "s/^sonar.jdbc.username.*$/sonar.jdbc.username=$OPENSHIFT_POSTGRESQL_DB_USERNAME/" sonar.properties
+  sed -i "s/^sonar.jdbc.password.*$/sonar.jdbc.password=$OPENSHIFT_POSTGRESQL_DB_PASSWORD/" sonar.properties
+  sed -i 's/^sonar.jdbc.url/#sonar.jdbc.url/' sonar.properties
+  sed -i "s;^.*sonar.jdbc.url=jdbc:postgresql.*$;sonar.jdbc.url=jdbc:postgresql://$PG_URL;" sonar.properties
+fi
+

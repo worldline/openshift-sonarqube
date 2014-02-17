@@ -1,0 +1,8 @@
+#!/bin/bash
+
+ROOT=$OPENSHIFT_DATA_DIR
+
+cd $ROOT/sonarqube/bin/linux-x86-64
+./sonar.sh start
+
+
