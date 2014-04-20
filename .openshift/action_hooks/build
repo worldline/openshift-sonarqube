@@ -15,8 +15,8 @@ rm -Rf sonarqube sonarqube-$SONAR_VERSION.zip
 mv sonarqube-$SONAR_VERSION sonarqube
 
 cd sonarqube/conf
-sed -i 's/
-//' sonar.properties
+#sed -i 's/
+#//' sonar.properties
 sed -i "s/^#sonar.web.host.*$/sonar.web.host=$OPENSHIFT_DIY_IP/" sonar.properties
 sed -i "s/^#sonar.web.port.*$/sonar.web.port=$OPENSHIFT_DIY_PORT/" sonar.properties
 
@@ -45,9 +45,9 @@ rm ${OPENSHIFT_DATA_DIR}sonarqube/lib/wrapper-*
 curl -o ${OPENSHIFT_DATA_DIR}wrapper-delta-pack-3.5.9.tar.gz http://wrapper.tanukisoftware.com/download/3.5.9/wrapper-delta-pack-3.5.9.tar.gz
 tar -zxvf ${OPENSHIFT_DATA_DIR}wrapper-delta-pack-3.5.9.tar.gz -C ${OPENSHIFT_DATA_DIR}
 rm ${OPENSHIFT_DATA_DIR}wrapper-delta-pack-3.5.9.tar.gz
-cp ${OPENSHIFT_DATA_DIR}wrapper-delta-pack-3.5.9/lib/libwrapper-* ${OPENSHIFT_DATA_DIR}sonarqube/lib
-cp ${OPENSHIFT_DATA_DIR}wrapper-delta-pack-3.5.9/lib/wrapper.jar ${OPENSHIFT_DATA_DIR}sonarqube/lib/wrapper-3.5.9.jar
-cp ${OPENSHIFT_DATA_DIR}wrapper-delta-pack-3.5.9/bin/wrapper-* ${OPENSHIFT_DATA_DIR}sonarqube/lib
+cp ${OPENSHIFT_DATA_DIR}wrapper-delta-pack-3.5.9/lib/wrapper.jar ${OPENSHIFT_DATA_DIR}sonarqube/lib/wrapper.jar
+cp ${OPENSHIFT_DATA_DIR}wrapper-delta-pack-3.5.9/bin/wrapper-linux-x86-64 ${OPENSHIFT_DATA_DIR}sonarqube/bin/linux-x86-64/wrapper
+cp ${OPENSHIFT_DATA_DIR}wrapper-delta-pack-3.5.9/lib/libwrapper-linux-x86-64 ${OPENSHIFT_DATA_DIR}sonarqube/bin/linux-x86-64/lib/libwrapper.so
 
 echo "wrapper.backend.type=PIPE" >> ${OPENSHIFT_DATA_DIR}sonarqube/conf/wrapper.conf
 
