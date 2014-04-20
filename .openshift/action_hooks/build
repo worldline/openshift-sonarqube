@@ -33,11 +33,11 @@ rm -rf logs
 ln -s $OPENSHIFT_LOG_DIR logs
 
 cd $OPENSHIFT_DATA_DIR/sonarqube
-rm  logs
+rm -rf logs
 ln -s $OPENSHIFT_LOG_DIR logs
 
 cd $OPENSHIFT_DATA_DIR/tomcat
-rm logs
+rm -rf logs
 ln -s $OPENSHIFT_LOG_DIR logs
 
 rm ${OPENSHIFT_DATA_DIR}sonarqube/lib/libwrapper-*
@@ -47,7 +47,7 @@ tar -zxvf ${OPENSHIFT_DATA_DIR}wrapper-delta-pack-3.5.9.tar.gz -C ${OPENSHIFT_DA
 rm ${OPENSHIFT_DATA_DIR}wrapper-delta-pack-3.5.9.tar.gz
 cp ${OPENSHIFT_DATA_DIR}wrapper-delta-pack-3.5.9/lib/libwrapper-* ${OPENSHIFT_DATA_DIR}sonarqube/lib
 cp ${OPENSHIFT_DATA_DIR}wrapper-delta-pack-3.5.9/lib/wrapper.jar ${OPENSHIFT_DATA_DIR}sonarqube/lib/wrapper-3.5.9.jar
-cp ${OPENSHIFT_DATA_DIR}wrapper-delta-pack-3.5.9/bin/wrapper-* ${OPENSHIFT_DATA_DIR}sonarqube/lib/exec
+cp ${OPENSHIFT_DATA_DIR}wrapper-delta-pack-3.5.9/bin/wrapper-* ${OPENSHIFT_DATA_DIR}sonarqube/lib
 
 echo "wrapper.backend.type=PIPE" >> ${OPENSHIFT_DATA_DIR}sonarqube/conf/wrapper.conf
 
