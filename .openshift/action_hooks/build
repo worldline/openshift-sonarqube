@@ -49,7 +49,7 @@ cp ${OPENSHIFT_DATA_DIR}wrapper-delta-pack-3.5.9/lib/wrapper.jar ${OPENSHIFT_DAT
 cp ${OPENSHIFT_DATA_DIR}wrapper-delta-pack-3.5.9/bin/wrapper-linux-x86-64 ${OPENSHIFT_DATA_DIR}sonarqube/bin/linux-x86-64/wrapper
 cp ${OPENSHIFT_DATA_DIR}wrapper-delta-pack-3.5.9/lib/libwrapper-linux-x86-64.so ${OPENSHIFT_DATA_DIR}sonarqube/bin/linux-x86-64/lib/libwrapper.so
 
-echo "wrapper.backend.type=PIPE" >> ${OPENSHIFT_DATA_DIR}sonarqube/conf/wrapper.conf
+echo -e "\nwrapper.backend.type=PIPE" >> ${OPENSHIFT_DATA_DIR}sonarqube/conf/wrapper.conf
 
 
 
