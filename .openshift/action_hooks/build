@@ -2,6 +2,13 @@
 ROOT=$OPENSHIFT_DATA_DIR
 SONAR_VERSION=4.1.1
 
+# Log output of the startupscript to file
+exec > ${OPENSHIFT_DATA_DIR}logs/startup.log
+exec 2>&1 # Also log stderr
+
+#Log the commands as well
+set -v
+
 if [[ $OPENSHIFT_POSTGRESQL_DB_URL ]]
 then
   PG_URL="$OPENSHIFT_POSTGRESQL_DB_HOST:$OPENSHIFT_POSTGRESQL_DB_PORT/$PGDATABASE"
