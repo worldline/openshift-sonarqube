@@ -27,6 +27,12 @@ cd sonarqube/conf
 sed -i "s/^#sonar.web.host.*$/sonar.web.host=$OPENSHIFT_DIY_IP/" sonar.properties
 sed -i "s/^#sonar.web.port.*$/sonar.web.port=$OPENSHIFT_DIY_PORT/" sonar.properties
 
+
+# Set Wrapper log levels to debug
+#sed -i "s/^wrapper.console.loglevel.*$/wrapper.console.loglevel=DEBUG/" wrapper.conf
+#sed -i "s/^wrapper.logfile.loglevel.*$/wrapper.logfile.loglevel=DEBUG/" wrapper.conf
+#echo -e "\nwrapper.debug=TRUE" >> ${OPENSHIFT_DATA_DIR}sonarqube/conf/wrapper.conf
+
 if [[ $PG_URL ]]
 then
   sed -i "s/^sonar.jdbc.username.*$/sonar.jdbc.username=$OPENSHIFT_POSTGRESQL_DB_USERNAME/" sonar.properties
