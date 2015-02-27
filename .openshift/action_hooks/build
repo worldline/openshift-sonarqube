@@ -1,6 +1,6 @@
 #!/bin/bash
 ROOT=$OPENSHIFT_DATA_DIR
-SONAR_VERSION=4.1.1
+SONAR_VERSION=5.0
 
 # Log output of the startupscript to file
 exec > ${OPENSHIFT_DATA_DIR}logs/startup.log
@@ -35,12 +35,20 @@ sed -i "s/^#sonar.web.port.*$/sonar.web.port=$OPENSHIFT_DIY_PORT/" sonar.propert
 
 if [[ $PG_URL ]]
 then
-  sed -i "s/^sonar.jdbc.username.*$/sonar.jdbc.username=$OPENSHIFT_POSTGRESQL_DB_USERNAME/" sonar.properties
-  sed -i "s/^sonar.jdbc.password.*$/sonar.jdbc.password=$OPENSHIFT_POSTGRESQL_DB_PASSWORD/" sonar.properties
+  sed -i "s/^#sonar.jdbc.username.*$/sonar.jdbc.username=$OPENSHIFT_POSTGRESQL_DB_USERNAME/" sonar.properties
+  sed -i "s/^#sonar.jdbc.password.*$/sonar.jdbc.password=$OPENSHIFT_POSTGRESQL_DB_PASSWORD/" sonar.properties
   sed -i 's/^sonar.jdbc.url/#sonar.jdbc.url/' sonar.properties
   sed -i "s;^.*sonar.jdbc.url=jdbc:postgresql.*$;sonar.jdbc.url=jdbc:postgresql://$PG_URL;" sonar.properties
 fi
 
+# Adapt elasticsearch host to be in permitted range 15000-35530 for openshift, as specified here: https://help.openshift.com/hc/en-us/articles/202185874
+# This port is also used for the search client
+sed -i "s/^#sonar.search.port=.*$/sonar.search.port=35530/" sonar.properties
+# TODO We really could use a sonar.search.host property here, that changed the search client url
+#sed -i "s/^#sonar.search.host=.*$/sonar.search.host=$OPENSHIFT_DIY_IP/" sonar.properties
+# Workaround: Adapt elasticsearch host (address search server is bound to)
+sed -i "s/^#sonar.search.javaAdditionalOpts=.*$/sonar.search.javaAdditionalOpts=-Des.network.host=$OPENSHIFT_DIY_IP/" sonar.properties
+# What about the address the search client connects to?
 cd $OPENSHIFT_DATA_DIR
 rm -rf logs
 ln -s $OPENSHIFT_LOG_DIR logs
@@ -49,18 +57,15 @@ cd $OPENSHIFT_DATA_DIR/sonarqube
 rm -rf logs
 ln -s $OPENSHIFT_LOG_DIR logs
 
-cd $OPENSHIFT_DATA_DIR/tomcat
-rm -rf logs
-ln -s $OPENSHIFT_LOG_DIR logs
-
-rm ${OPENSHIFT_DATA_DIR}sonarqube/bin/linux-x86-64/lib/libwrapper-*
-rm ${OPENSHIFT_DATA_DIR}sonarqube/lib/wrapper-*
+rm ${OPENSHIFT_DATA_DIR}sonarqube/bin/linux-x86-64/lib/libwrapper*
+rm ${OPENSHIFT_DATA_DIR}sonarqube/lib/jsw/wrapper*
 curl -o ${OPENSHIFT_DATA_DIR}wrapper-delta-pack-3.5.9.tar.gz http://wrapper.tanukisoftware.com/download/3.5.9/wrapper-delta-pack-3.5.9.tar.gz
 tar -zxvf ${OPENSHIFT_DATA_DIR}wrapper-delta-pack-3.5.9.tar.gz -C ${OPENSHIFT_DATA_DIR}
 rm ${OPENSHIFT_DATA_DIR}wrapper-delta-pack-3.5.9.tar.gz
-cp ${OPENSHIFT_DATA_DIR}wrapper-delta-pack-3.5.9/lib/wrapper.jar ${OPENSHIFT_DATA_DIR}sonarqube/lib/wrapper.jar
+cp ${OPENSHIFT_DATA_DIR}wrapper-delta-pack-3.5.9/lib/wrapper.jar ${OPENSHIFT_DATA_DIR}sonarqube/lib/jsw/wrapper.jar
 cp ${OPENSHIFT_DATA_DIR}wrapper-delta-pack-3.5.9/bin/wrapper-linux-x86-64 ${OPENSHIFT_DATA_DIR}sonarqube/bin/linux-x86-64/wrapper
 cp ${OPENSHIFT_DATA_DIR}wrapper-delta-pack-3.5.9/lib/libwrapper-linux-x86-64.so ${OPENSHIFT_DATA_DIR}sonarqube/bin/linux-x86-64/lib/libwrapper.so
+rm -Rf ${OPENSHIFT_DATA_DIR}wrapper-delta-pack-3.5.9/
 
 echo -e "\nwrapper.backend.type=PIPE" >> ${OPENSHIFT_DATA_DIR}sonarqube/conf/wrapper.conf
 
