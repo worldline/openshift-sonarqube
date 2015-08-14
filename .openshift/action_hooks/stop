@@ -3,6 +3,10 @@
 ROOT=$OPENSHIFT_DATA_DIR
 
 cd $ROOT/sonarqube/bin/linux-x86-64
-./sonar.sh stop
+
+if [ -f ./sonar.sh ]
+then
+  ./sonar.sh stop
+fi
 
 
