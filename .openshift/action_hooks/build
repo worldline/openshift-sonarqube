@@ -1,6 +1,14 @@
 #!/bin/bash
 ROOT=$OPENSHIFT_DATA_DIR
-SONAR_VERSION=5.0
+SONAR_VERSION=5.2
+
+# Min and max memory for sonarqube application and elastic search
+# TODO adapt for bigger gears or comment out usage bellow for defaults
+SONAR_XMX=384m
+SONAR_XMS=384m
+ELASTIC_SEARCH_XMX=128m
+ELASTIC_SEARCH_XMS=128m
+
 
 # Log output of the startupscript to file
 exec > ${OPENSHIFT_DATA_DIR}logs/startup.log
@@ -16,7 +24,8 @@ fi
 
 cd $ROOT
 
-wget http://dist.sonar.codehaus.org/sonarqube-$SONAR_VERSION.zip
+wget https://sonarsource.bintray.com/Distribution/sonarqube/sonarqube-$SONAR_VERSION.zip
+
 unzip sonarqube-$SONAR_VERSION.zip
 rm -Rf sonarqube sonarqube-$SONAR_VERSION.zip
 mv sonarqube-$SONAR_VERSION sonarqube
@@ -26,7 +35,6 @@ cd sonarqube/conf
 #//' sonar.properties
 sed -i "s/^#sonar.web.host.*$/sonar.web.host=$OPENSHIFT_DIY_IP/" sonar.properties
 sed -i "s/^#sonar.web.port.*$/sonar.web.port=$OPENSHIFT_DIY_PORT/" sonar.properties
-
 
 # Set Wrapper log levels to debug
 #sed -i "s/^wrapper.console.loglevel.*$/wrapper.console.loglevel=DEBUG/" wrapper.conf
@@ -41,14 +49,16 @@ then
   sed -i "s;^.*sonar.jdbc.url=jdbc:postgresql.*$;sonar.jdbc.url=jdbc:postgresql://$PG_URL;" sonar.properties
 fi
 
-# Adapt elasticsearch host to be in permitted range 15000-35530 for openshift, as specified here: https://help.openshift.com/hc/en-us/articles/202185874
-# This port is also used for the search client
+# Adapt elasticsearch port to be in permitted range 15000-35530 for openshift, as specified here: https://help.openshift.com/hc/en-us/articles/202185874
 sed -i "s/^#sonar.search.port=.*$/sonar.search.port=35530/" sonar.properties
-# TODO We really could use a sonar.search.host property here, that changed the search client url
-#sed -i "s/^#sonar.search.host=.*$/sonar.search.host=$OPENSHIFT_DIY_IP/" sonar.properties
-# Workaround: Adapt elasticsearch host (address search server is bound to)
-sed -i "s/^#sonar.search.javaAdditionalOpts=.*$/sonar.search.javaAdditionalOpts=-Des.network.host=$OPENSHIFT_DIY_IP/" sonar.properties
-# What about the address the search client connects to?
+# Also bind elasticsearch to $OPENSHIFT_DIY_IP instead of localhost
+sed -i "s/^#sonar.search.host=.*$/sonar.search.host=$OPENSHIFT_DIY_IP/" sonar.properties
+
+# If running on small gear, replace java opts for running on openshift
+sed -i "s/^#sonar.web.javaOpts=.*$/sonar.web.javaOpts=-Xmx$SONAR_XMX -Xms$SONAR_XMS/" sonar.properties
+sed -i "s/^#sonar.search.javaOpts=.*$/sonar.search.javaOpts=-Xmx$ELASTIC_SEARCH_XMX -Xms$ELASTIC_SEARCH_XMS/" sonar.properties
+
+
 cd $OPENSHIFT_DATA_DIR
 rm -rf logs
 ln -s $OPENSHIFT_LOG_DIR logs
@@ -68,6 +78,3 @@ cp ${OPENSHIFT_DATA_DIR}wrapper-delta-pack-3.5.9/lib/libwrapper-linux-x86-64.so 
 rm -Rf ${OPENSHIFT_DATA_DIR}wrapper-delta-pack-3.5.9/
 
 echo -e "\nwrapper.backend.type=PIPE" >> ${OPENSHIFT_DATA_DIR}sonarqube/conf/wrapper.conf
-
-
-
