@@ -11,6 +11,8 @@ Running on OpenShift
 
 Create an account at http://openshift.redhat.com/
 
+For a detailed step by step introduction on how to set up SonarQube 5.2 and Jenkins with Github projects see also [here](https://itaffinity.wordpress.com/2015/11/17/building-github-projects-with-jenkins-maven-and-sonarqube-5-2-on-openshift/).
+
 Create a DIY application. If you may add a PostgreSQL cartridge.
 
     rhc app create sonar diy-0.1 postgresql-9.2
