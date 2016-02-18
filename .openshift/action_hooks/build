@@ -1,13 +1,11 @@
 #!/bin/bash
 ROOT=$OPENSHIFT_DATA_DIR
-SONAR_VERSION=5.2
+SONAR_VERSION=5.3
 
 # Min and max memory for sonarqube application and elastic search
 # TODO adapt for bigger gears or comment out usage bellow for defaults
 SONAR_XMX=384m
-SONAR_XMS=384m
 ELASTIC_SEARCH_XMX=128m
-ELASTIC_SEARCH_XMS=128m
 
 
 # Log output of the startupscript to file
