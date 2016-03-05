@@ -1,6 +1,6 @@
 #!/bin/bash
 ROOT=$OPENSHIFT_DATA_DIR
-SONAR_VERSION=4.1.1
+SONAR_VERSION=5.3
 
 if [[ $OPENSHIFT_POSTGRESQL_DB_URL ]]
 then
@@ -9,7 +9,7 @@ fi
 
 cd $ROOT
 
-wget http://dist.sonar.codehaus.org/sonarqube-$SONAR_VERSION.zip
+wget http://sonarsource.bintray.com/Distribution/sonarqube/sonarqube-$SONAR_VERSION.zip
 unzip sonarqube-$SONAR_VERSION.zip
 rm -Rf sonarqube sonarqube-$SONAR_VERSION.zip
 mv sonarqube-$SONAR_VERSION sonarqube
