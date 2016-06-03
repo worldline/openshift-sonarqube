@@ -2,12 +2,18 @@
 ROOT=$OPENSHIFT_DATA_DIR
 SONAR_VERSION=5.4
 
-# Min and max memory for sonarqube application and elastic search
-# TODO adapt for bigger gears or comment out usage bellow for defaults
-SONAR_XMX=384m
-SONAR_XMS=384m
-ELASTIC_SEARCH_XMX=128m
-ELASTIC_SEARCH_XMS=128m
+# VM Options for sonarqube web application, elastic search and compute engine processes
+# sonarqube web application: 
+# Defaults v5.6 -Xmx512m -Xms128m  -XX:MaxPermSize=160m -XX:+HeapDumpOnOutOfMemoryError -Djava.net.preferIPv4Stack=true
+SONAR_WEB_OPTS="-Xmx256m -Xms128m  -XX:MaxPermSize=64m -XX:+HeapDumpOnOutOfMemoryError -Djava.net.preferIPv4Stack=true"
+ 
+# compute engine:
+# Defaults v5.6      -Xmx512m -Xms128m -XX:MaxPermSize=160m -XX:+HeapDumpOnOutOfMemoryError -Djava.net.preferIPv4Stack=true
+COMPUTE_ENGINE_OPTS="-Xms128m -Xms128m -XX:MaxPermSize=64m  -XX:+HeapDumpOnOutOfMemoryError -Djava.net.preferIPv4Stack=true"
+
+# elastic search:
+# Defaults v5.6      -Xmx1G   -Xms256m -Xss256k -Djava.net.preferIPv4Stack=true -XX:+UseParNewGC -XX:+UseConcMarkSweepGC -XX:CMSInitiatingOccupancyFraction=75 -XX:+UseCMSInitiatingOccupancyOnly -XX:+HeapDumpOnOutOfMemoryError
+ELASTIC_SEARCH_OPTS="-Xmx128m -Xms128m -Xss256k -Djava.net.preferIPv4Stack=true -XX:+UseParNewGC -XX:+UseConcMarkSweepGC -XX:CMSInitiatingOccupancyFraction=75 -XX:+UseCMSInitiatingOccupancyOnly -XX:+HeapDumpOnOutOfMemoryError"
 
 
 # Log output of the startupscript to file
@@ -54,9 +60,11 @@ sed -i "s/^#sonar.search.port=.*$/sonar.search.port=35530/" sonar.properties
 # Also bind elasticsearch to $OPENSHIFT_DIY_IP instead of localhost
 sed -i "s/^#sonar.search.host=.*$/sonar.search.host=$OPENSHIFT_DIY_IP/" sonar.properties
 
+# Adapt java opts for running on openshift
 # If running on small gear, replace java opts for running on openshift
-sed -i "s/^#sonar.web.javaOpts=.*$/sonar.web.javaOpts=-Xmx$SONAR_XMX -Xms$SONAR_XMS/" sonar.properties
-sed -i "s/^#sonar.search.javaOpts=.*$/sonar.search.javaOpts=-Xmx$ELASTIC_SEARCH_XMX -Xms$ELASTIC_SEARCH_XMS/" sonar.properties
+sed -i "s/^#sonar.web.javaOpts=.*$/sonar.web.javaOpts=$SONAR_WEB_OPTS/" sonar.properties
+sed -i "s/^#sonar.ce.javaOpts=.*$/sonar.ce.javaOpts=$COMPUTE_ENGINE_OPTS/" sonar.properties
+sed -i "s/^#sonar.search.javaOpts=.*$/sonar.search.javaOpts=$ELASTIC_SEARCH_OPTS/" sonar.properties
 
 
 cd $OPENSHIFT_DATA_DIR
