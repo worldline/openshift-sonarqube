@@ -1,6 +1,27 @@
 #!/bin/bash
 ROOT=$OPENSHIFT_DATA_DIR
-SONAR_VERSION=4.1.1
+SONAR_VERSION=5.4
+
+# VM Options for sonarqube web application, elastic search and compute engine processes
+# sonarqube web application: 
+# Defaults v5.6 -Xmx512m -Xms128m  -XX:MaxPermSize=160m -XX:+HeapDumpOnOutOfMemoryError -Djava.net.preferIPv4Stack=true
+SONAR_WEB_OPTS="-Xmx256m -Xms128m  -XX:MaxPermSize=64m -XX:+HeapDumpOnOutOfMemoryError -Djava.net.preferIPv4Stack=true"
+ 
+# compute engine:
+# Defaults v5.6      -Xmx512m -Xms128m -XX:MaxPermSize=160m -XX:+HeapDumpOnOutOfMemoryError -Djava.net.preferIPv4Stack=true
+COMPUTE_ENGINE_OPTS="-Xms128m -Xms128m -XX:MaxPermSize=64m  -XX:+HeapDumpOnOutOfMemoryError -Djava.net.preferIPv4Stack=true"
+
+# elastic search:
+# Defaults v5.6      -Xmx1G   -Xms256m -Xss256k -Djava.net.preferIPv4Stack=true -XX:+UseParNewGC -XX:+UseConcMarkSweepGC -XX:CMSInitiatingOccupancyFraction=75 -XX:+UseCMSInitiatingOccupancyOnly -XX:+HeapDumpOnOutOfMemoryError
+ELASTIC_SEARCH_OPTS="-Xmx128m -Xms128m -Xss256k -Djava.net.preferIPv4Stack=true -XX:+UseParNewGC -XX:+UseConcMarkSweepGC -XX:CMSInitiatingOccupancyFraction=75 -XX:+UseCMSInitiatingOccupancyOnly -XX:+HeapDumpOnOutOfMemoryError"
+
+
+# Log output of the startupscript to file
+exec > ${OPENSHIFT_DATA_DIR}logs/startup.log
+exec 2>&1 # Also log stderr
+
+#Log the commands as well
+set -v
 
 if [[ $OPENSHIFT_POSTGRESQL_DB_URL ]]
 then
@@ -9,7 +30,8 @@ fi
 
 cd $ROOT
 
-wget http://dist.sonar.codehaus.org/sonarqube-$SONAR_VERSION.zip
+wget https://sonarsource.bintray.com/Distribution/sonarqube/sonarqube-$SONAR_VERSION.zip
+
 unzip sonarqube-$SONAR_VERSION.zip
 rm -Rf sonarqube sonarqube-$SONAR_VERSION.zip
 mv sonarqube-$SONAR_VERSION sonarqube
@@ -20,13 +42,30 @@ cd sonarqube/conf
 sed -i "s/^#sonar.web.host.*$/sonar.web.host=$OPENSHIFT_DIY_IP/" sonar.properties
 sed -i "s/^#sonar.web.port.*$/sonar.web.port=$OPENSHIFT_DIY_PORT/" sonar.properties
 
+# Set Wrapper log levels to debug
+#sed -i "s/^wrapper.console.loglevel.*$/wrapper.console.loglevel=DEBUG/" wrapper.conf
+#sed -i "s/^wrapper.logfile.loglevel.*$/wrapper.logfile.loglevel=DEBUG/" wrapper.conf
+#echo -e "\nwrapper.debug=TRUE" >> ${OPENSHIFT_DATA_DIR}sonarqube/conf/wrapper.conf
+
 if [[ $PG_URL ]]
 then
-  sed -i "s/^sonar.jdbc.username.*$/sonar.jdbc.username=$OPENSHIFT_POSTGRESQL_DB_USERNAME/" sonar.properties
-  sed -i "s/^sonar.jdbc.password.*$/sonar.jdbc.password=$OPENSHIFT_POSTGRESQL_DB_PASSWORD/" sonar.properties
+  sed -i "s/^#sonar.jdbc.username.*$/sonar.jdbc.username=$OPENSHIFT_POSTGRESQL_DB_USERNAME/" sonar.properties
+  sed -i "s/^#sonar.jdbc.password.*$/sonar.jdbc.password=$OPENSHIFT_POSTGRESQL_DB_PASSWORD/" sonar.properties
   sed -i 's/^sonar.jdbc.url/#sonar.jdbc.url/' sonar.properties
   sed -i "s;^.*sonar.jdbc.url=jdbc:postgresql.*$;sonar.jdbc.url=jdbc:postgresql://$PG_URL;" sonar.properties
 fi
+
+# Adapt elasticsearch port to be in permitted range 15000-35530 for openshift, as specified here: https://help.openshift.com/hc/en-us/articles/202185874
+sed -i "s/^#sonar.search.port=.*$/sonar.search.port=35530/" sonar.properties
+# Also bind elasticsearch to $OPENSHIFT_DIY_IP instead of localhost
+sed -i "s/^#sonar.search.host=.*$/sonar.search.host=$OPENSHIFT_DIY_IP/" sonar.properties
+
+# Adapt java opts for running on openshift
+# If running on small gear, replace java opts for running on openshift
+sed -i "s/^#sonar.web.javaOpts=.*$/sonar.web.javaOpts=$SONAR_WEB_OPTS/" sonar.properties
+sed -i "s/^#sonar.ce.javaOpts=.*$/sonar.ce.javaOpts=$COMPUTE_ENGINE_OPTS/" sonar.properties
+sed -i "s/^#sonar.search.javaOpts=.*$/sonar.search.javaOpts=$ELASTIC_SEARCH_OPTS/" sonar.properties
+
 
 cd $OPENSHIFT_DATA_DIR
 rm -rf logs
@@ -36,20 +75,14 @@ cd $OPENSHIFT_DATA_DIR/sonarqube
 rm -rf logs
 ln -s $OPENSHIFT_LOG_DIR logs
 
-cd $OPENSHIFT_DATA_DIR/tomcat
-rm -rf logs
-ln -s $OPENSHIFT_LOG_DIR logs
-
-rm ${OPENSHIFT_DATA_DIR}sonarqube/bin/linux-x86-64/lib/libwrapper-*
-rm ${OPENSHIFT_DATA_DIR}sonarqube/lib/wrapper-*
+rm ${OPENSHIFT_DATA_DIR}sonarqube/bin/linux-x86-64/lib/libwrapper*
+rm ${OPENSHIFT_DATA_DIR}sonarqube/lib/jsw/wrapper*
 curl -o ${OPENSHIFT_DATA_DIR}wrapper-delta-pack-3.5.9.tar.gz http://wrapper.tanukisoftware.com/download/3.5.9/wrapper-delta-pack-3.5.9.tar.gz
 tar -zxvf ${OPENSHIFT_DATA_DIR}wrapper-delta-pack-3.5.9.tar.gz -C ${OPENSHIFT_DATA_DIR}
 rm ${OPENSHIFT_DATA_DIR}wrapper-delta-pack-3.5.9.tar.gz
-cp ${OPENSHIFT_DATA_DIR}wrapper-delta-pack-3.5.9/lib/wrapper.jar ${OPENSHIFT_DATA_DIR}sonarqube/lib/wrapper.jar
+cp ${OPENSHIFT_DATA_DIR}wrapper-delta-pack-3.5.9/lib/wrapper.jar ${OPENSHIFT_DATA_DIR}sonarqube/lib/jsw/wrapper.jar
 cp ${OPENSHIFT_DATA_DIR}wrapper-delta-pack-3.5.9/bin/wrapper-linux-x86-64 ${OPENSHIFT_DATA_DIR}sonarqube/bin/linux-x86-64/wrapper
 cp ${OPENSHIFT_DATA_DIR}wrapper-delta-pack-3.5.9/lib/libwrapper-linux-x86-64.so ${OPENSHIFT_DATA_DIR}sonarqube/bin/linux-x86-64/lib/libwrapper.so
+rm -Rf ${OPENSHIFT_DATA_DIR}wrapper-delta-pack-3.5.9/
 
 echo -e "\nwrapper.backend.type=PIPE" >> ${OPENSHIFT_DATA_DIR}sonarqube/conf/wrapper.conf
-
-
-

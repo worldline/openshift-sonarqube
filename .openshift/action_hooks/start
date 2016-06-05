@@ -2,6 +2,8 @@
 
 ROOT=$OPENSHIFT_DATA_DIR
 
+export JAVA_HOME=/etc/alternatives/java_sdk_1.8.0
+export PATH=$JAVA_HOME/bin:$PATH
 
 
 cd $ROOT/sonarqube/bin/linux-x86-64
